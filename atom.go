@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -41,7 +42,16 @@ func parseAtom(data []byte, read *db) (*Feed, error) {
 		next := new(Item)
 		next.Title = item.Title
 		next.Content = item.Content
-		next.Link = item.Link.Href
+		next.Link = item.Links[0].Href
+		for _, link := range item.Links {
+			if link.Rel == "enclosure" {
+				enc := new(Enclosures)
+				enc.Length, _ = strconv.ParseUint(link.Length, 10, 64)
+				enc.Url = link.Href
+				enc.Type = link.Type
+				next.Enclosures = append(next.Enclosures, enc)
+			}
+		}
 		if item.Date != "" {
 			next.Date, err = parseTime(item.Date)
 			if err != nil {
@@ -80,12 +90,12 @@ type atomFeed struct {
 }
 
 type atomItem struct {
-	XMLName xml.Name `xml:"entry"`
-	Title   string   `xml:"title"`
-	Content string   `xml:"summary"`
-	Link    atomLink `xml:"link"`
-	Date    string   `xml:"updated"`
-	ID      string   `xml:"id"`
+	XMLName xml.Name    `xml:"entry"`
+	Title   string      `xml:"title"`
+	Content string      `xml:"summary"`
+	Links   []*atomLink `xml:"link"`
+	Date    string      `xml:"updated"`
+	ID      string      `xml:"id"`
 }
 
 type atomImage struct {
@@ -97,7 +107,10 @@ type atomImage struct {
 }
 
 type atomLink struct {
-	Href string `xml:"href,attr"`
+	Href   string `xml:"href,attr"`
+	Rel    string `xml:"rel,attr"`
+	Length string `xml:"length,attr"`
+	Type   string `xml:"type,attr"`
 }
 
 func (a *atomImage) Image() *Image {

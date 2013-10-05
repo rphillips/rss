@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -90,6 +91,7 @@ func parseRSS2(data []byte, read *db) (*Feed, error) {
 		}
 		next.ID = item.ID
 		next.Read = false
+		next.Enclosures = append(next.Enclosures, item.Enclosures.Enclosures())
 
 		if _, ok := out.ItemMap[next.ID]; ok {
 			fmt.Printf("Warning: Item %q has duplicate ID.\n", next.Title)
@@ -121,13 +123,20 @@ type rss2_0Channel struct {
 	SkipDays    []string     `xml:"skipDays>day"`
 }
 
+type rss2_0Enclosure struct {
+	Length string `xml:"length,attr"`
+	Type   string `xml:"type,attr"`
+	Url    string `xml:"url,attr"`
+}
+
 type rss2_0Item struct {
-	XMLName xml.Name `xml:"item"`
-	Title   string   `xml:"title"`
-	Content string   `xml:"description"`
-	Link    string   `xml:"link"`
-	Date    string   `xml:"pubDate"`
-	ID      string   `xml:"guid"`
+	XMLName    xml.Name        `xml:"item"`
+	Enclosures rss2_0Enclosure `xml:"enclosure"`
+	Title      string          `xml:"title"`
+	Content    string          `xml:"description"`
+	Link       string          `xml:"link"`
+	Date       string          `xml:"pubDate"`
+	ID         string          `xml:"guid"`
 }
 
 type rss2_0Image struct {
@@ -136,6 +145,14 @@ type rss2_0Image struct {
 	Url     string   `xml:"url"`
 	Height  int      `xml:"height"`
 	Width   int      `xml:"width"`
+}
+
+func (i *rss2_0Enclosure) Enclosures() *Enclosures {
+	out := new(Enclosures)
+	out.Length, _ = strconv.ParseUint(i.Length, 10, 64)
+	out.Type = i.Type
+	out.Url = i.Url
+	return out
 }
 
 func (i *rss2_0Image) Image() *Image {

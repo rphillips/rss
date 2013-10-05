@@ -118,12 +118,13 @@ func (f *Feed) String() string {
 
 // Item represents a single story.
 type Item struct {
-	Title   string
-	Content string
-	Link    string
-	Date    time.Time
-	ID      string
-	Read    bool
+	Title      string
+	Content    string
+	Link       string
+	Date       time.Time
+	ID         string
+	Read       bool
+	Enclosures []*Enclosures
 }
 
 func (i *Item) String() string {
@@ -131,8 +132,14 @@ func (i *Item) String() string {
 }
 
 func (i *Item) Format(s string) string {
-	return fmt.Sprintf("Item %q\n\t%s%q\n\t%s%s\n\t%s%q\n\t%sRead: %v\n\t%s%q", i.Title, s, i.Link, s,
-		i.Date.Format("Mon 2 Jan 2006 15:04:05 MST"), s, i.ID, s, i.Read, s, i.Content)
+	return fmt.Sprintf("Item %q\n\t%s%q\n\t%s%s\n\t%s%q\n\t%sRead: %v\n\t%s%q\n\t%s\n", i.Title, s, i.Link, s,
+		i.Date.Format("Mon 2 Jan 2006 15:04:05 MST"), s, i.ID, s, i.Read, s, i.Content, i.Enclosures)
+}
+
+type Enclosures struct {
+	Length uint64
+	Type   string
+	Url    string
 }
 
 type Image struct {
